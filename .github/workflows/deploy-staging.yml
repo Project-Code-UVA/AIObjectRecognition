@@ -4,7 +4,6 @@ on:
   push:
   pull_request:
 
-
 jobs:
   build-and-deploy:
     name: Build and Deploy to Staging
@@ -32,4 +31,4 @@ jobs:
           STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
         run: |
           # Replace with your deployment command or script
-          curl -X POST -H "Authorization: Bearer $STAGING_API_KEY" -d @dist/index.js $STAGING_API_URL
+          curl -X POST -H "Authorization: Bearer $STAGING_API_KEY" -d "@/dist/index.js" "$STAGING_API_URL"
