@@ -8,13 +8,13 @@
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
-    "tensorflow": "^2.0.0",       // If using TensorFlow.js for machine learning
-    "opencv4nodejs": "^5.6.0",    // OpenCV for image processing
-    "express": "^4.17.1"          // For serving the app if it includes a server
+    "tensorflow": "^2.0.0",
+    "opencv4nodejs": "^5.6.0",
+    "express": "^4.17.1"
   },
   "devDependencies": {
-    "eslint": "^7.32.0"           // Optional: For code quality checks
+    "eslint": "^7.32.0"
   },
-  "author": "Project Code Dev Team",
+  "author": "James Doan",
   "license": "ISC"
 }
