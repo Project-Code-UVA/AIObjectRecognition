@@ -1,0 +1,20 @@
+{
+  "name": "ai-object-recognition",
+  "version": "1.0.0",
+  "description": "An AI-powered object recognition project aimed at improving accessibility for visually impaired users.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "tensorflow": "^2.0.0",       // If using TensorFlow.js for machine learning
+    "opencv4nodejs": "^5.6.0",    // OpenCV for image processing
+    "express": "^4.17.1"          // For serving the app if it includes a server
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0"           // Optional: For code quality checks
+  },
+  "author": "Project Code Dev Team",
+  "license": "ISC"
+}
