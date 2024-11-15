@@ -1,35 +1,37 @@
 name: Generate Documentation
 
-on:
-  push:
-    branches:
-      - main
+# Disabled workflow for Generate Documentation
 
-jobs:
-  generate-docs:
-    runs-on: ubuntu-latest
+# on:
+#   push:
+#     branches:
+#       - main
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+# jobs:
+#   generate-docs:
+#     runs-on: ubuntu-latest
 
-      - name: Debug root directory
-        run: ls -R
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#         with:
+#           fetch-depth: 0
 
-      - name: Debug docs directory
-        run: ls docs || echo "docs/ directory not found"
+#       - name: Debug root directory
+#         run: ls -R
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10
+#       - name: Debug docs directory
+#         run: ls docs || echo "docs/ directory not found"
 
-      - name: Install Sphinx
-        run: |
-          python -m pip install --upgrade pip
-          pip install sphinx sphinx-rtd-theme
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: 3.10
 
-      - name: Build Documentation
-        run: sphinx-build -b html docs/ build/
+#       - name: Install Sphinx
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install sphinx sphinx-rtd-theme
+
+#       - name: Build Documentation
+#         run: sphinx-build -b html docs/ build/
