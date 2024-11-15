@@ -19,7 +19,7 @@ jobs:
         run: ls -R
 
       - name: Debug docs directory
-        run: ls docs
+        run: ls docs || echo "docs/ directory not found"
 
       - name: Set up Python
         uses: actions/setup-python@v4
