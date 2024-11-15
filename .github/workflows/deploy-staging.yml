@@ -1,40 +1,42 @@
 name: Staging Deployment
 
-on:
-  push:
-  pull_request:
+# Disabled workflow for Staging Deployment
 
-jobs:
-  build-and-deploy:
-    name: Build and Deploy to Staging
-    runs-on: ubuntu-latest
+# on:
+#   push:
+#   pull_request:
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+# jobs:
+#   build-and-deploy:
+#     name: Build and Deploy to Staging
+#     runs-on: ubuntu-latest
 
-      - name: List root directory contents for debugging
-        run: ls -R
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: List client/public directory contents for debugging
-        run: ls client/public
+#       - name: List root directory contents for debugging
+#         run: ls -R
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16' # Specify Node.js version
+#       - name: List client/public directory contents for debugging
+#         run: ls client/public
 
-      - name: Install dependencies
-        run: npm install
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: '16' # Specify Node.js version
 
-      - name: Build the application
-        run: npm run build
+#       - name: Install dependencies
+#         run: npm install
 
-      - name: Deploy to Staging
-        if: github.event_name == 'push' # Deploy only on direct pushes, not pull requests
-        env:
-          STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
-          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
-        run: |
-          # Replace with your deployment command or script
-          curl -X POST -H "Authorization: Bearer $STAGING_API_KEY" -d "@/dist/index.js" "$STAGING_API_URL"
+#       - name: Build the application
+#         run: npm run build
+
+#       - name: Deploy to Staging
+#         if: github.event_name == 'push' # Deploy only on direct pushes, not pull requests
+#         env:
+#           STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
+#           STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+#         run: |
+#           # Replace with your deployment command or script
+#           curl -X POST -H "Authorization: Bearer $STAGING_API_KEY" -d "@/dist/index.js" "$STAGING_API_URL"
