@@ -16,6 +16,9 @@ jobs:
       - name: List root directory contents for debugging
         run: ls -R
 
+      - name: List client/public directory contents for debugging
+        run: ls client/public
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
