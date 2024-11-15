@@ -1,0 +1,35 @@
+name: Security Scanning
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Runs weekly on Sunday at midnight UTC
+  pull_request:           # Runs on every pull request
+  push:                   # Runs on pushes 
+    
+
+jobs:
+  codeql-scan:
+    name: Perform CodeQL Analysis
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read          # Allows Actions to read resources
+      contents: read         # Grants access to code
+      security-events: write # Required for security analysis
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: 'javascript,python' # Specify languages (add/remove as needed)
+          # Optional: Specify custom CodeQL queries
+          # queries: ./path/to/custom-queries
+
+      # Step 3: Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
