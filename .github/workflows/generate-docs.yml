@@ -1,0 +1,57 @@
+name: Automated Documentation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  generate-docs:
+    name: Generate or Update Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Node.js for JSDoc or Python for Sphinx
+      - name: Set up Node.js
+        if: ${{ contains(github.event.head_commit.message, 'js') }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Set up Python
+        if: ${{ contains(github.event.head_commit.message, 'py') }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Install dependencies for Sphinx or JSDoc
+      - name: Install Sphinx dependencies
+        if: ${{ contains(github.event.head_commit.message, 'sphinx') }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install sphinx sphinx-rtd-theme
+
+      - name: Install JSDoc dependencies
+        if: ${{ contains(github.event.head_commit.message, 'jsdoc') }}
+        run: npm install jsdoc
+
+      # Generate documentation
+      - name: Generate Sphinx Documentation
+        if: ${{ contains(github.event.head_commit.message, 'sphinx') }}
+        run: |
+          sphinx-build -b html docs/ build/
+
+      - name: Generate JSDoc Documentation
+        if: ${{ contains(github.event.head_commit.message, 'jsdoc') }}
+        run: |
+          npx jsdoc -c jsdoc.conf.json
+
+      # Deploy documentation (optional)
+      - name: Deploy Documentation
+        if: always()
+        run: |
+          echo "Deploying generated documentation"
+          # Add your deployment logic here (e.g., pushing to GitHub Pages)
