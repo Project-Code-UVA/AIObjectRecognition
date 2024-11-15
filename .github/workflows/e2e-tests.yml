@@ -1,0 +1,38 @@
+name: End-to-End (E2E) Testing
+
+on:
+  workflow_run:
+    workflows: ["Staging Deployment"]
+    types:
+      - completed
+
+jobs:
+  e2e-tests:
+    name: Run E2E Tests with Cypress
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Cypress
+        run: npm install cypress --save-dev
+
+      - name: Start Staging Server
+        # This should start your staging server for Cypress to test against.
+        # Replace 'npm run start-staging' with the actual command that starts your staging environment.
+        run: npm run start-staging &
+        env:
+          STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+
+      - name: Run Cypress Tests
+        run: npx cypress run
