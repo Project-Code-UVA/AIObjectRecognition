@@ -105,3 +105,4 @@ android/.gradle/
 ios/Pods/
 ios/build/
 yarn.lock
+android/app/debug.keystore
