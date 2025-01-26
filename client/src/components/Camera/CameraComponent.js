@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState, useRef } from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function CameraComponent({ onPictureTaken }) {
