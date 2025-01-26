@@ -8,7 +8,7 @@ export default function LandingPage() {
   return (
     <View style={styles.container}>
         <Image source={require("../../../assets/images/logo.png")} style={styles.logo} /> 
-        <Text style={styles.title}>Welcome to A.Eyes</Text>
+        <Text style={styles.title}>A.Eyes</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("CameraPage")}>
             <Text style={styles.buttonText}>Open Camera</Text>
         </TouchableOpacity>
