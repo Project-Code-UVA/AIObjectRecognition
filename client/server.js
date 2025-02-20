@@ -26,6 +26,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
   });
+
+  socket.on('photoData', (data) => {
+    // console.log('Photo data received:', data);
+    // Broadcast to all other connected clients
+    io.emit('photoData', data);
+  });
 });
 
 // Start the server

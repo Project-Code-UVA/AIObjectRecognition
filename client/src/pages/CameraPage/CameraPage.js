@@ -3,13 +3,19 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import CameraComponent from "../../components/Camera/CameraComponent";
 import LiveCameraComponent from "../../components/Camera/LiveCameraComponent";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from '@react-navigation/native';
+import socket from "../../../socket";
+import DevelopmentDisplay from "../../components/Display/DevelopmentDisplay";
+
 
 export default function CameraPage() {
+  const navigation = useNavigation();
   const [capturedImage, setCapturedImage] = useState(null);
   const [mode, setMode] = useState('photo'); // 'photo' or 'live'
 
   const handlePictureTaken = (photo) => {
     setCapturedImage(photo.uri);
+    socket.emit('photoData', { photoURI: photo.uri, timestamp: Date.now() });
     console.log("Captured Image"); // Modify this to send picture data to backend team
   };
 
@@ -37,7 +43,7 @@ export default function CameraPage() {
         <LiveCameraComponent />
       )}
 
-      {capturedImage && (
+      {/* {capturedImage && (
         <View style={styles.fullScreenPreview}>
           <Image source={{ uri: capturedImage }} style={styles.fullImage} />
           <TouchableOpacity
@@ -47,7 +53,13 @@ export default function CameraPage() {
             <Ionicons name="close" size={40} color="white" />
           </TouchableOpacity>
         </View>
-      )}
+      )} */}
+
+      <DevelopmentDisplay />
+
+      {/* <TouchableOpacity onPress={() => navigation.navigate("DevelopmentDisplay")}>
+        <Text>View Captured Photos</Text>
+      </TouchableOpacity> */}
     </View>
   );
 }
