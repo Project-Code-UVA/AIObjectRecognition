@@ -55,7 +55,7 @@ export default function OneWayLiveCameraComponent() {
       {localStream && (
         <RTCView stream={localStream} style={styles.video} />
       )}
-      <Text style={styles.info}>Recorded chunks: {chunkCount}</Text>
+      {/* <Text style={styles.info}>Recorded chunks: {chunkCount}</Text> */}
     </View>
   );
 }

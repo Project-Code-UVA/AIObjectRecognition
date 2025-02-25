@@ -1,15 +1,14 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useState, useRef } from 'react';
-import { TouchableOpacity, View, StyleSheet, Text } from 'react-native';
+import React, { useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import socket from '../../../socket';
 
-export default function CameraComponent({ onPictureTaken }) {
-  const [facing, setFacing] = useState('back');
-  const [permission, requestPermission] = useCameraPermissions();
+export default function CameraComponent({ permission, requestPermission, facing, toggleCameraFacing }) {
   const cameraRef = useRef(null);
 
   if (!permission) return <View />;
-
+  
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
@@ -21,14 +20,11 @@ export default function CameraComponent({ onPictureTaken }) {
     );
   }
 
-  const toggleCameraFacing = () => {
-    setFacing((current) => (current === 'back' ? 'front' : 'back'));
-  };
-
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync({ base64: true });
-      onPictureTaken(photo);
+      console.log("Captured Photo:", photo);
+      socket.emit('photoData', { photoURI: photo.uri, timestamp: Date.now() });
     }
   };
 
@@ -63,7 +59,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    // paddingVertical: 30,
     paddingBottom: 40,
     paddingTop: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
