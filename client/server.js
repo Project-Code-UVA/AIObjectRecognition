@@ -20,6 +20,12 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
   });
 
+  socket.on('liveData', (data) => {
+    console.log('Live data received on server:', data);
+    // Broadcast to all connected clients (including the sender)
+    io.emit('liveData', data);
+  });
+
   socket.on('photoData', (data) => {
     // console.log('Photo data received:', data);
     // Broadcast to all other connected clients
