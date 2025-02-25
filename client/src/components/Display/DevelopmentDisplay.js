@@ -21,7 +21,7 @@ export default function DevelopmentDisplay() {
   }, []);
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.heading}>Captured Photos (Dev Display)</Text>
+      <Text style={styles.heading}>Dev Display</Text>
       {photos.map((uri, index) => (
         <Image key={index} source={{ uri }} style={styles.image} />
       ))}
@@ -34,8 +34,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-    width: 300,      // Adjust the width as needed
-    height: 200,     // Adjust the height as needed
+    width: 300,
+    height: 200, 
     backgroundColor: '#fff',
     borderColor: '#000',
     borderWidth: 1,

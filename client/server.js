@@ -15,13 +15,6 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  // Handle signaling messages
-  socket.on('signal', (data) => {
-    console.log('Signal received:', data);
-    // Broadcast the signal to the other peer
-    socket.broadcast.emit('signal', data);
-  });
-
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
