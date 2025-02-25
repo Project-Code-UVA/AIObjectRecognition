@@ -7,14 +7,12 @@ export default function DevelopmentDisplay() {
 
   useEffect(() => {
     const handlePhotoData = (data) => {
-      // Append the new photo URI to the list
       setPhotos((prevPhotos) => [...prevPhotos, data.photoURI]);
       // console.log("Photo", data);
     };
 
     socket.on('photoData', handlePhotoData);
 
-    // Cleanup listener on unmount
     return () => {
       socket.off('photoData', handlePhotoData);
     };
