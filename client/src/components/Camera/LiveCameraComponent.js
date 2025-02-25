@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
   video: {
     width: '100%',
     height: '100%',
+    transform: [{ scaleX: -1 }],
   },
   title: {
     position: 'absolute',

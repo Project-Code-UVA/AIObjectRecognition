@@ -51,6 +51,8 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
     width: '100%',
+    height: '100%',
+    transform: [{ scaleX: 1 }],
   },
   controls: {
     position: 'absolute',
