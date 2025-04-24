@@ -1,8 +1,8 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
+//import dotenv from 'dotenv';
 
 // Load environment variables from .env file
-dotenv.config();
+//dotenv.config();
 
 // Models for image analysis
 const IMAGE_CAPTION_MODEL = 'Xenova/vit-gpt2-image-captioning';
@@ -21,7 +21,7 @@ export const analyzeImage = async (imageBase64) => {
     console.log('Sending image to Hugging Face API...');
     
     // Load API key from environment variables
-    const API_KEY = process.env.HUGGING_FACE_API_KEY;
+    const API_KEY = process.env.HUGGINGFACE_API_KEY;
     
     // Try image captioning first
     try {

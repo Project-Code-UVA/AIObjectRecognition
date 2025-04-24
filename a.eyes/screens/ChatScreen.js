@@ -88,6 +88,10 @@ export default function ChatScreen({ navigate, chatParams }) {
       <View style={styles.chatContent}>
         <Text style={styles.timestamp}>{item.timestamp}</Text>
         <Text style={styles.description}>{item.description}</Text>
+        <TouchableOpacity onPress={() => speakDescription(item.description)} style={{marginTop: 8, flexDirection: 'row', alignItems: 'center'}}>
+          <MaterialIcons name="volume-up" size={22} color="#3498db" />
+          <Text style={{marginLeft: 6, color: '#3498db', fontWeight: 'bold'}}>Listen</Text>
+        </TouchableOpacity>
         
         {item.objects && item.objects.length > 0 ? (
           <View style={styles.objectList}>

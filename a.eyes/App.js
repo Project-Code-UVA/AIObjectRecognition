@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, StatusBar, SafeAreaView } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import CameraScreen from './screens/CameraScreen';
-import ChatScreen from './screens/ChatScreen';
+import ChatScreen from './screens/HistoryScreens';
+import HistoryScreen from './screens/HistoryScreens';
+import HistoryChatScreen from './screens/HistoryChatScreen';
 
 export default function App() {
   const [screen, setScreen] = useState('Home');
@@ -35,6 +37,9 @@ export default function App() {
       {screen === 'Home' && <HomeScreen navigate={navigate} />}
       {screen === 'Camera' && <CameraScreen navigate={navigate} />}
       {screen === 'Chat' && <ChatScreen navigate={navigate} chatParams={chatParams} />}
+      {screen === 'History' && <HistoryScreen navigate={navigate} />}
+      {screen === 'HistoryChat' && <HistoryChatScreen navigate={navigate} route={{ params: chatParams }} />}
+      {screen === 'LiveChat' && <LiveChatScreen navigate={navigate} />}
     </SafeAreaView>
   );
 }

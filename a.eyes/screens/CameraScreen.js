@@ -1,341 +1,252 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
+import React, { useRef, useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { CameraView, useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import * as Speech from 'expo-speech';
 import { MaterialIcons } from '@expo/vector-icons';
 import { analyzeImage } from '../services/imageRecognitionService';
+import { saveHistoryEntry, loadHistory } from '../services/storageService';
 
 export default function CameraScreen({ navigate }) {
-  const [hasPermission, setHasPermission] = useState(null);
+  const cameraRef = useRef(null);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [useTTS, setUseTTS] = useState(true);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [historyCount, setHistoryCount] = useState(0);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [autoCapture, setAutoCapture] = useState(false);
+  const intervalRef = useRef(null);
 
+  // Load history count for badge
   useEffect(() => {
-    (async () => {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
+    refreshHistoryCount();
   }, []);
 
-  const takePicture = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 0.7,
-        // FIX: Use MediaType directly instead of deprecated MediaTypeOptions
-        mediaTypes: ['images'],
-      });
+  const refreshHistoryCount = async () => {
+    const history = await loadHistory();
+    setHistoryCount(history.length);
+  };
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const imageUri = result.assets[0].uri;
-        setPreviewImage(imageUri);
-        processImage(imageUri);
-      }
-    } catch (error) {
-      console.error('ImagePicker error:', error);
-      Alert.alert('Camera Error', 'Failed to take picture. Please try again.');
+  // Request permissions on mount
+  useEffect(() => {
+    if (!cameraPermission) requestCameraPermission();
+    if (!micPermission) requestMicPermission();
+  }, []);
+
+  // Handle auto-capture interval
+  useEffect(() => {
+    if (autoCapture) {
+      intervalRef.current = setInterval(() => {
+        handleTakePhoto(true);
+      }, 3000);
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-  };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [autoCapture]);
 
-  const processImage = async (imageUri) => {
-    try {
-      setIsProcessing(true);
-      console.log('Processing image...');
-
-      const processedImage = await ImageManipulator.manipulateAsync(
-        imageUri,
-        [{ resize: { width: 600 } }],
-        { format: ImageManipulator.SaveFormat.JPEG, compress: 0.8, base64: true }
-      );
-
-      // Only add the data URI prefix if needed by the API
-      // Note: Our updated analyzeImage function now handles this prefix properly
-      const formattedBase64 = processedImage.base64;
-      console.log('Image processed, sending for analysis...');
-
-      // Set a timeout in case analysis takes too long
-      const analysisPromise = analyzeImage(formattedBase64);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Analysis timed out')), 20000)
-      );
-
-      // Race between actual analysis and timeout
-      const analysis = await Promise.race([analysisPromise, timeoutPromise])
-        .catch(error => {
-          console.log('Analysis error or timeout:', error.message);
-          return {
-            description: "Analysis took too long. Please try again with a clearer image or check your connection.",
-            objects: [],
-            confidence: 0
-          };
-        });
-
-      if (useTTS) {
-        Speech.speak(analysis.description, {
-          rate: 0.9,
-          pitch: 1.0,
-          onDone: () => {
-            setIsProcessing(false);
-            navigate('Chat', { imageUri, analysis });
-          },
-          onError: () => {
-            setIsProcessing(false);
-            Alert.alert('Error', 'Could not play audio description');
-            navigate('Chat', { imageUri, analysis });
-          },
-        });
-      } else {
-        setIsProcessing(false);
-        navigate('Chat', { imageUri, analysis });
-      }
-    } catch (error) {
-      console.error('Image processing error:', error);
-      setIsProcessing(false);
-      
-      // Still navigate to chat with error info
-      const errorAnalysis = {
-        description: "I couldn't process this image due to a technical issue. Please try again.",
-        objects: [],
-        confidence: 0
-      };
-      
-      navigate('Chat', { imageUri, analysis: errorAnalysis });
-    }
-  };
-
-  const toggleTTS = () => {
-    setUseTTS(prev => !prev);
-    Speech.speak(useTTS ? 'Text mode activated' : 'Voice mode activated', {
-      rate: 1.0,
-    });
-  };
-
-  const chooseFromLibrary = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: false,
-        quality: 0.7,
-        mediaTypes: ['images'],
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const imageUri = result.assets[0].uri;
-        setPreviewImage(imageUri);
-        processImage(imageUri);
-      }
-    } catch (error) {
-      console.error('ImagePicker error:', error);
-      Alert.alert('Gallery Error', 'Failed to select image. Please try again.');
-    }
-  };
-
-  if (hasPermission === null) {
+  // Permissions UI
+  if (!cameraPermission || !micPermission) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size={50} color="#3498db" />
-        <Text style={styles.loadingText}>Requesting camera permission...</Text>
+        <Text style={styles.loadingText}>Requesting permissions...</Text>
       </View>
     );
   }
-
-  if (hasPermission === false) {
+  if (!cameraPermission.granted || !micPermission.granted) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <MaterialIcons name="no-photography" size={80} color="#e74c3c" />
-        <Text style={styles.errorText}>No access to camera</Text>
-        <Text style={styles.instructionText}>
-          Please enable camera permissions in your device settings
-        </Text>
+        <Text style={styles.errorText}>No access to camera or microphone</Text>
+        <TouchableOpacity style={styles.controlButton} onPress={requestCameraPermission}>
+          <Text style={styles.buttonText}>Grant Camera</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.controlButton} onPress={requestMicPermission}>
+          <Text style={styles.buttonText}>Grant Microphone</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
+  // TTS wrapper
+  const speakIfEnabled = (text) => {
+    if (ttsEnabled) {
+      Speech.speak(text, { rate: 0.9, pitch: 1.0 });
+    }
+  };
+
+  // Take photo handler
+  const handleTakePhoto = async (fromAuto = false) => {
+    if (!cameraRef.current || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
+      let label = 'Photo';
+      try {
+        const analysis = await analyzeImage(photo.base64);
+        label = analysis.description || 'Photo';
+        if (!fromAuto) speakIfEnabled(label);
+      } catch {}
+      await saveHistoryEntry({
+        version: 1,
+        timestamp: new Date().toISOString(),
+        imageUri: photo.uri,
+        label,
+        type: 'photo',
+      });
+      refreshHistoryCount();
+      if (!fromAuto) Alert.alert('Photo Saved', 'Photo has been added to history.');
+    } catch (e) {
+      if (!fromAuto) Alert.alert('Error', 'Failed to take photo: ' + e.message);
+    }
+    setIsProcessing(false);
+  };
+
+  // TTS toggle handler
+  const handleTtsToggle = () => setTtsEnabled((prev) => !prev);
+
+  // Video (auto-capture) toggle handler
+  const handleAutoCaptureToggle = () => setAutoCapture((prev) => !prev);
+
   return (
     <View style={styles.container}>
-      {isProcessing ? (
-        <View style={styles.processingContainer}>
-          <ActivityIndicator size={50} color="#3498db" />
-          <Text style={styles.processingText}>Analyzing image...</Text>
-        </View>
-      ) : (
-        <>
-          <View style={styles.cameraContainer}>
-            {previewImage ? (
-              <Image source={{ uri: previewImage }} style={styles.previewImage} />
-            ) : (
-              <View style={styles.placeholderContainer}>
-                <MaterialIcons name="camera-alt" size={100} color="#bdc3c7" />
-                <Text style={styles.placeholderText}>Tap the button below to take a picture</Text>
-              </View>
-            )}
+      <CameraView
+        style={styles.camera}
+        ref={cameraRef}
+        facing="back"
+        enableAudio={true}
+      >
+        {isProcessing && (
+          <View style={styles.processingOverlay}>
+            <ActivityIndicator size={50} color="#3498db" />
+            <Text style={styles.processingText}>Processing...</Text>
           </View>
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.galleryButton}
-              onPress={chooseFromLibrary}
-              accessibilityLabel="Choose from gallery"
-              accessibilityHint="Select an image from your photo library"
-            >
-              <MaterialIcons name="photo-library" size={36} color="white" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.captureButton}
-              onPress={takePicture}
-              accessibilityLabel="Take picture"
-              accessibilityHint="Captures an image to identify objects"
-            >
-              <MaterialIcons name="camera" size={50} color="white" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.modeButton, useTTS ? styles.voiceMode : styles.textMode]}
-              onPress={toggleTTS}
-              accessibilityLabel={useTTS ? 'Voice mode active' : 'Text mode active'}
-              accessibilityHint="Toggle between voice and text modes"
-            >
-              <MaterialIcons
-                name={useTTS ? 'record-voice-over' : 'chat'}
-                size={36}
-                color="white"
-              />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.modeIndicator}>
-            <Text style={styles.modeText}>
-              {useTTS ? 'Voice Mode: ON' : 'Text Mode: ON'}
-            </Text>
-          </View>
-          
-          <TouchableOpacity
-            style={styles.historyButton}
-            onPress={() => navigate('Chat')}
-            accessibilityLabel="View history"
-            accessibilityHint="Go to chat history page"
-          >
-            <MaterialIcons name="history" size={36} color="white" />
-            <Text style={styles.buttonText}>History</Text>
-          </TouchableOpacity>
-        </>
-      )}
+        )}
+      </CameraView>
+      {/* History button in top right */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.historyButton}
+          onPress={() => navigate('History')}
+          accessibilityLabel="View history"
+        >
+          <MaterialIcons name="history" size={28} color="#3498db" />
+          {historyCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{historyCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+      {/* Bottom controls */}
+      <View style={styles.footer}>
+        {/* Video (auto-capture) toggle */}
+        <TouchableOpacity
+          style={[
+            styles.controlButton,
+            autoCapture ? styles.activeButton : null,
+          ]}
+          onPress={handleAutoCaptureToggle}
+          disabled={isProcessing}
+          accessibilityLabel={autoCapture ? "Stop Auto Photo" : "Start Auto Photo"}
+        >
+          <MaterialIcons name={autoCapture ? "stop" : "videocam"} size={28} color="white" />
+          <Text style={styles.buttonText}>{autoCapture ? "Stop" : "Video"}</Text>
+        </TouchableOpacity>
+        {/* Take Photo */}
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={() => handleTakePhoto(false)}
+          disabled={isProcessing}
+          accessibilityLabel="Take Photo"
+        >
+          <MaterialIcons name="photo-camera" size={28} color="white" />
+          <Text style={styles.buttonText}>Photo</Text>
+        </TouchableOpacity>
+        {/* TTS toggle */}
+        <TouchableOpacity
+          style={styles.controlButton}
+          onPress={handleTtsToggle}
+          accessibilityLabel="Toggle Text to Speech"
+        >
+          <MaterialIcons name={ttsEnabled ? "volume-up" : "volume-off"} size={28} color="white" />
+          <Text style={styles.buttonText}>{ttsEnabled ? "TTS On" : "TTS Off"}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1,
-    backgroundColor: '#f9f9f9' 
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-    overflow: 'hidden'
-  },
-  previewImage: {
-    flex: 1,
-    resizeMode: 'contain'
-  },
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#2c3e50',
-  },
-  placeholderText: {
-    color: '#ecf0f1',
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 20,
-    paddingHorizontal: 30
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#e74c3c',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#3498db',
-    marginTop: 20,
-  },
-  instructionText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  processingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  processingText: {
-    marginTop: 20,
-    fontSize: 18,
-    color: '#3498db',
-  },
-  buttonContainer: {
+  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  camera: { flex: 1 },
+  header: {
     position: 'absolute',
-    bottom: 30,
+    top: 40,
+    right: 20,
     flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-around',
     alignItems: 'center',
-  },
-  galleryButton: {
-    backgroundColor: '#3498db',
-    borderRadius: 50,
-    padding: 15,
-  },
-  captureButton: {
-    backgroundColor: '#e74c3c',
-    borderRadius: 50,
-    padding: 20,
-    borderWidth: 5,
-    borderColor: 'white',
-  },
-  modeButton: { borderRadius: 50, padding: 15 },
-  voiceMode: { backgroundColor: '#9b59b6' },
-  textMode: { backgroundColor: '#2ecc71' },
-  modeIndicator: {
-    position: 'absolute',
-    top: 20,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 10,
-    borderRadius: 15,
-  },
-  modeText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    zIndex: 2,
   },
   historyButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    backgroundColor: '#3498db',
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 15,
-    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
   },
-  buttonText: {
+  badge: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    marginLeft: 6,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  badgeText: {
     color: 'white',
-    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 5,
+    fontSize: 12,
   },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 2,
+    paddingHorizontal: 24,
+  },
+  controlButton: {
+    backgroundColor: '#3498db',
+    borderRadius: 50,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 80,
+    justifyContent: 'center',
+  },
+  activeButton: {
+    backgroundColor: '#e67e22',
+  },
+  buttonText: { color: 'white', fontSize: 15, fontWeight: 'bold', marginLeft: 8 },
+  centerContent: { justifyContent: 'center', alignItems: 'center', padding: 20 },
+  errorText: { fontSize: 20, fontWeight: 'bold', color: '#e74c3c', marginTop: 20, textAlign: 'center' },
+  loadingText: { fontSize: 18, color: '#3498db', marginTop: 20 },
+  processingOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  processingText: { marginTop: 20, fontSize: 18, color: '#3498db' },
 });
