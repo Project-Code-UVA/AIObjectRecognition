@@ -1,41 +1,31 @@
-name: Deploy to Elastic Beanstalk
+name: Deploy React Client (Production)
 
 on:
   push:
-    tags: ['v*.*.*']   # Trigger deployment on semantic version tags (e.g., v1.0.0)
+    tags:
+      - 'v*.*.*'
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install dependencies
+        working-directory: client
         run: npm ci
 
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: ghcr.io/${{ github.repository }}:prod
+      - name: Build client
+        working-directory: client
+        run: npm run build
 
-      # Alternative: Use ECS deploy if beanstalk deploy is missing
-      - name: Deploy to AWS Elastic Beanstalk (or ECS)
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          cluster: ai-eyes
-          service: ai-eyes-prod
-          task-definition: backend/taskdef.json  # Ensure your task definition is correct
-          wait-for-service-stability: true
-          aws-region: us-east-1
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          branch: gh-pages
+          folder: client/build
+          token: ${{ secrets.GITHUB_TOKEN }}
