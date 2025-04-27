@@ -1,28 +1,41 @@
-# .github/workflows/superlinter.yml
+# .github/workflows/security-scan.yml
 
-name: Super-Linter
+name: Security Scan
 
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 4 * * 0'   # weekly Sunday 04:00 UTC
 
 permissions:
   contents: read
-  statuses: write
+  security-events: write
 
 jobs:
-  lint:
+  codeql:
+    name: Perform CodeQL Analysis
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        language: [ 'javascript', 'python' ]
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Super-Linter (via Docker)
-        uses: docker://ghcr.io/github/super-linter/super-linter:slim-v6.4.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEFAULT_BRANCH: main
-          DISABLE_LINTERS: "CHECKOV,JAVASCRIPT_STANDARD,MARKDOWN,PYTHON_BLACK,PYTHON_PYLINT"
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Run CodeQL analysis
+        uses: github/codeql-action/analyze@v3
