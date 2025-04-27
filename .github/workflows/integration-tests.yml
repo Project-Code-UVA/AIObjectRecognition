@@ -36,8 +36,8 @@ jobs:
       # --- Python side: Set up Python and run FastAPI integration tests ---
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
+          python-version: '3.11'   # No cache for pip
+          
       # Check if requirements.txt exists and only install if it does
       - name: Install Python dependencies (if requirements.txt exists)
         run: |
