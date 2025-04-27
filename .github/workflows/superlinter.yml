@@ -1,0 +1,22 @@
+name: Super-Linter
+
+on:
+  pull_request:
+    branches: ['application-implementation']  # Trigger on PRs to application-implementation branch
+  push:
+    branches: ['application-implementation']  # Trigger on pushes to application-implementation branch
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Super-Linter ships with rules for JS, TS, Python, Markdown, JSON…
+      - name: Code Lint
+        uses: github/super-linter/slim@v6
+        env:
+          DEFAULT_BRANCH: application-implementation  # Update default branch to application-implementation
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: turn off languages you don’t use
+          # DISABLE_LINTERS: 'RUBY,GO'

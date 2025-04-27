@@ -1,0 +1,30 @@
+name: Deploy Production
+
+on:
+  push:
+    tags: ['v*.*.*']   # semantic-version tag triggers
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Pull exact containers built for same commit
+        run: |
+          docker pull ghcr.io/${{ github.repository }}:staging
+          docker tag  ghcr.io/${{ github.repository }}:staging ghcr.io/${{ github.repository }}:prod
+
+      - name: Push prod tag
+        run: docker push ghcr.io/${{ github.repository }}:prod
+
+      - name: ECS update service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: backend/taskdef.json          # checked-in file
+          service: ai-eyes-prod
+          cluster: ai-eyes
+          wait-for-service-stability: true
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1

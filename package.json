@@ -1,0 +1,13 @@
+{
+  "name": "ai-object-recognition",
+  "version": "1.0.0",
+  "description": "An AI-powered full-stack application",
+  "main": "index.js",
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "start": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "author": "Project Code Dev Team",
+  "license": "ISC"
+}

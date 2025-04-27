@@ -1,0 +1,4 @@
+"scripts": {
+  "build": "webpack --config webpack.config.js",  // or your framework’s specific build command
+  "test": "echo \"No tests specified\" && exit 0"
+}

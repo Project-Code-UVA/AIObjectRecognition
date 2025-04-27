@@ -1,0 +1,35 @@
+name: Integration Tests
+
+on:
+  pull_request:
+  workflow_run:
+    workflows: [Unit Tests]
+    types: [completed]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Start backend (FastAPI) in background
+        run: |
+          pip install -r backend/requirements.txt
+          uvicorn backend.app:app --host 0.0.0.0 --port 8000 &
+      - name: Run integration tests
+        run: npm run test:integration
