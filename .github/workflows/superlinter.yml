@@ -1,5 +1,3 @@
-# .github/workflows/superlinter.yml
-
 name: Super-Linter
 
 on:
@@ -15,12 +13,16 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Run Super-Linter
-        uses: github/super-linter/super-linter@v6.4.1
+        uses: github/super-linter@v6.4.1      # <— correct repo@tag
+        with:
+          # Disable specific linters causing failures
+          DISABLE_LINTERS: "CHECKOV,JAVASCRIPT_STANDARD,MARKDOWN,PYTHON_BLACK,PYTHON_PYLINT"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: main
-          DISABLE_LINTERS: "CHECKOV,JAVASCRIPT_STANDARD,MARKDOWN,PYTHON_BLACK,PYTHON_PYLINT"
