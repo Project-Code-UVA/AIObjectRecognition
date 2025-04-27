@@ -1,50 +1,35 @@
 name: Integration Tests
 
-on: 
-  push:       # Triggers on any push to any branch
-  pull_request:  # Triggers on any pull request to any branch
+on:
+  pull_request:
+  workflow_run:
+    workflows: [Unit Tests]
+    types: [completed]
 
 jobs:
-  integration-tests:
-    name: Run Integration Tests
+  integration:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      # Set up Python environment if Python-based integration tests are required
-      - name: Set up Python
-        uses: actions/setup-python@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.x'
-
-      - name: Install Python dependencies
+          node-version: 20
+      - run: npm ci
+      - name: Start backend (FastAPI) in background
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # Set up Node.js environment if Node.js-based integration tests are required
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-
-      - name: Install Node.js dependencies
-        run: npm install
-
-      # Run Integration Tests
-      - name: Run Integration Tests
-        run: |
-          # Run Python integration tests if any (example command)
-          pytest tests/integration --junitxml=integration-test-results.xml || echo "No Python integration tests found."
-          
-          # Run Node.js integration tests if any (example command)
-          npm run test:integration || echo "No Node.js integration tests found."
-
-      # Optionally, upload integration test results
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: integration-test-results
-          path: integration-test-results.xml  # Adjust path based on output files
+          pip install -r backend/requirements.txt
+          uvicorn backend.app:app --host 0.0.0.0 --port 8000 &
+      - name: Run integration tests
+        run: npm run test:integration
