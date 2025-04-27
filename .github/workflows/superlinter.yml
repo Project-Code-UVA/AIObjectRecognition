@@ -1,20 +1,21 @@
 name: Super-Linter
 
 on:
-  push:
   pull_request:
+  push:
+    branches: ['**']
 
 jobs:
-  super-lint:
-    name: Lint code base
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Run Super-Linter
-        uses: github/super-linter@latest
+      # Super-Linter ships with rules for JS, TS, Python, Markdown, JSON…
+      - name: Code Lint
+        uses: github/super-linter/slim@v6
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_MARKDOWN: false
+          # Optional: turn off languages you don’t use
+          # DISABLE_LINTERS: 'RUBY,GO'
