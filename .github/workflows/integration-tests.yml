@@ -39,10 +39,15 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install Python dependencies
+      # Check if requirements.txt exists and only install if it does
+      - name: Install Python dependencies (if requirements.txt exists)
         run: |
-          pip install -r backend/requirements.txt
-          pip install pytest
+          if [ -f "backend/requirements.txt" ]; then
+            echo "Found requirements.txt, installing dependencies..."
+            pip install -r backend/requirements.txt
+          else
+            echo "No requirements.txt found, skipping pip install"
+          fi
 
       - name: Start FastAPI backend (in the background)
         run: |
@@ -50,6 +55,3 @@ jobs:
 
       - name: Run Python integration tests
         run: pytest backend/integration_tests/ || echo "No Python integration tests found"
-
-      # --- Optional: Test integration with the database ---
-      # You can add further steps here for any database interactions, depending on your test strategy
