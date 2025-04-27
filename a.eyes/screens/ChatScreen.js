@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chatWithImage } from '../services/chatService';
+import { speakWithElevenLabs } from './CameraScreen';
 
 const CHAT_HISTORY_KEY = 'a.eyes.image_chats';
 
@@ -59,7 +61,7 @@ export default function ChatScreen({ navigate, route }) {
       const updatedLog = [...newLog, aiMsg];
       setChatLog(updatedLog);
       saveChat(updatedLog);
-      if (ttsEnabled) Speech.speak(aiReply, { rate: 0.9, pitch: 1.0 });
+      if (ttsEnabled) await speakWithElevenLabs(aiReply); // <-- Use ElevenLabs TTS here
     } catch (e) {
       const errMsg = { sender: 'ai', text: "Sorry, I couldn't reply due to a network error.", timestamp: new Date().toISOString() };
       const updatedLog = [...newLog, errMsg];
