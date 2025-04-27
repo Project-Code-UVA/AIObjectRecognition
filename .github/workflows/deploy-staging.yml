@@ -26,7 +26,7 @@ jobs:
       - name: Install & build React client
         working-directory: client
         run: |
-          npm ci
+          npm install        # <— no lockfile needed
           npm run build
 
       - name: Deploy to GitHub Pages (staging)
