@@ -76,14 +76,16 @@ export default function HistoryScreen({ navigate }) {
         )}
         ListEmptyComponent={<Text style={styles.empty}>No history yet.</Text>}
       />
-      <TouchableOpacity style={styles.backButton} onPress={() => navigate('Home')}>
-        <MaterialIcons name="arrow-back" size={24} color="white" />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigate('Camera')}>
-        <MaterialIcons name="camera-alt" size={24} color="white" />
-        <Text style={styles.backText}>Camera</Text>
-      </TouchableOpacity>
+      <View style={styles.bottomRow}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigate('Home')}>
+          <MaterialIcons name="arrow-back" size={24} color="white" />
+          <Text style={styles.backText}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigate('Camera')}>
+          <MaterialIcons name="camera-alt" size={24} color="white" />
+          <Text style={styles.backText}>Camera</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -98,7 +100,22 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, fontWeight: 'bold', color: '#2c3e50' },
   time: { fontSize: 12, color: '#7f8c8d' },
   empty: { textAlign: 'center', color: '#aaa', marginTop: 40 },
-  backButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3498db', borderRadius: 20, padding: 10, alignSelf: 'center', marginTop: 10 },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12, // If using React Native 0.71+, otherwise use marginRight below
+    marginTop: 10,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3498db',
+    borderRadius: 20,
+    padding: 10,
+    alignSelf: 'center',
+    marginHorizontal: 6, // Add horizontal margin for spacing
+    marginTop: 0, // Remove marginTop here if using bottomRow
+  },
   backText: { color: 'white', fontWeight: 'bold', marginLeft: 8 },
   chatButton: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   chatText: { color: '#3498db', marginLeft: 4, fontWeight: 'bold' },
