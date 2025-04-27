@@ -17,20 +17,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- JavaScript side ---
-      - uses: actions/setup-node@v4
+      # ───────────── JavaScript side ─────────────
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm test -- --ci || echo "No JS tests"
+          # ⚠️  no cache line → setup-node won’t look for package-lock.json
+          # cache: 'npm'
 
-      # --- Python side ---
-      - uses: actions/setup-python@v5
+      - name: Install JS deps
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "package-lock.json found → npm ci"
+            npm ci
+          else
+            echo "No lock-file → npm install"
+            npm install
+          fi
+
+      - name: Run JS unit tests (if any)
+        run: npm test -- --ci || echo "No JS tests"
+
+      # ───────────── Python side ─────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           cache: 'pip'
-      - run: |
+
+      - name: Install Python deps & run tests
+        run: |
           pip install -r backend/requirements.txt
           pip install pytest
           pytest backend || echo "No Py tests"
