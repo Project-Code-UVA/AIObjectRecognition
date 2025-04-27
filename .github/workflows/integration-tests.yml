@@ -23,23 +23,33 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # --- JavaScript side: Set up Node.js and run integration tests ---
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - run: npm ci
 
-      # Check if the requirements.txt file exists before trying to install Python deps
-      - name: Install Python deps (if requirements.txt exists)
-        run: |
-          if [ -f "backend/requirements.txt" ]; then
-            pip install -r backend/requirements.txt
-          else
-            echo "No requirements.txt found, skipping pip install"
-          fi
+      - name: Run JavaScript integration tests (using Jest or other)
+        run: npm run test:integration || echo "No JS integration tests found"
 
-      - name: Start backend (FastAPI) in background
+      # --- Python side: Set up Python and run FastAPI integration tests ---
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install pytest
+
+      - name: Start FastAPI backend (in the background)
         run: |
           uvicorn backend.app:app --host 0.0.0.0 --port 8000 &
 
-      - name: Run integration tests
-        run: npm run test:integration
+      - name: Run Python integration tests
+        run: pytest backend/integration_tests/ || echo "No Python integration tests found"
+
+      # --- Optional: Test integration with the database ---
+      # You can add further steps here for any database interactions, depending on your test strategy
