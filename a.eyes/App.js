@@ -12,16 +12,15 @@ export default function App() {
 
   const navigate = (target, params = null) => {
     console.log(`Navigating to ${target}`, params);
-    
-    // If going to Chat with params, update them
+
     if (target === 'Chat' && params) {
       setChatParams(params);
-    }
-    // If going to any other screen from Chat, reset params
-    else if (screen === 'Chat' && target !== 'Chat') {
+    } else if (target === 'HistoryChat' && params) {
+      setChatParams(params);
+    } else if ((screen === 'Chat' || screen === 'HistoryChat') && target !== 'Chat' && target !== 'HistoryChat') {
       setChatParams(null);
     }
-    
+
     setScreen(target);
   };
 
@@ -39,7 +38,6 @@ export default function App() {
       {screen === 'Chat' && <ChatScreen navigate={navigate} chatParams={chatParams} />}
       {screen === 'History' && <HistoryScreen navigate={navigate} />}
       {screen === 'HistoryChat' && <HistoryChatScreen navigate={navigate} route={{ params: chatParams }} />}
-      {screen === 'LiveChat' && <LiveChatScreen navigate={navigate} />}
     </SafeAreaView>
   );
 }
