@@ -1,0 +1,26 @@
+name: Monitoring Heartbeat
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # every 15 min
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check prod health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://api.ai-eyes.com/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Prod health-check failed"
+            exit 1
+          fi
+      - name: Notify Slack on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: GitHub Actions (heartbeat)
+          fields: repo,commit
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
