@@ -2,7 +2,7 @@ name: Deploy Production
 
 on:
   push:
-    tags: ['v*.*.*']   # semantic-version tag triggers
+    tags: ['v*.*.*']   # Trigger on semantic version tags
 
 jobs:
   promote:
@@ -10,21 +10,32 @@ jobs:
     environment: production
 
     steps:
-      - name: Pull exact containers built for same commit
-        run: |
-          docker pull ghcr.io/${{ github.repository }}:staging
-          docker tag  ghcr.io/${{ github.repository }}:staging ghcr.io/${{ github.repository }}:prod
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Push prod tag
-        run: docker push ghcr.io/${{ github.repository }}:prod
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: ECS update service
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}:prod
+
+      # Alternative: Use ECS deploy if beanstalk deploy is missing
+      - name: Deploy to Elastic Beanstalk (alternative)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: backend/taskdef.json          # checked-in file
+          task-definition: backend/taskdef.json          # Define your task definition here
           service: ai-eyes-prod
           cluster: ai-eyes
           wait-for-service-stability: true
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
