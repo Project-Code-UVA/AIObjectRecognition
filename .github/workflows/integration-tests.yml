@@ -1,10 +1,8 @@
-name: Integration Tests
+name: CI – Integration Tests
 
 on:
   pull_request:
-  workflow_run:
-    workflows: [Unit Tests]
-    types: [completed]
+    branches: [ main ]
 
 jobs:
   integration:
@@ -14,7 +12,8 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_PASSWORD: test
-        ports: ['5432:5432']
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s
@@ -24,33 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- JavaScript side: Set up Node.js and run integration tests ---
-      - uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
-      - run: npm ci
+          python-version: '3.11'
 
-      - name: Run JavaScript integration tests (using Jest or other)
-        run: npm run test:integration || echo "No JS integration tests found"
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-      # --- Python side: Set up Python and run FastAPI integration tests ---
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'   # No cache for pip
-          
-      # Check if requirements.txt exists and only install if it does
-      - name: Install Python dependencies (if requirements.txt exists)
-        run: |
-          if [ -f "backend/requirements.txt" ]; then
-            echo "Found requirements.txt, installing dependencies..."
-            pip install -r backend/requirements.txt
-          else
-            echo "No requirements.txt found, skipping pip install"
-          fi
-
-      - name: Start FastAPI backend (in the background)
-        run: |
-          uvicorn backend.app:app --host 0.0.0.0 --port 8000 &
-
-      - name: Run Python integration tests
-        run: pytest backend/integration_tests/ || echo "No Python integration tests found"
+      - name: Run Integration Tests
+        run: pytest tests/integration || echo "No integration tests found"
