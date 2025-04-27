@@ -1,6 +1,6 @@
 # .github/workflows/deploy-staging.yml
 
-name: Deploy Client (Staging)
+name: Build Client (Staging)
 
 on:
   push:
@@ -8,10 +8,11 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: read   # only need to read the repo for a build
 
 jobs:
-  build-and-deploy:
+  build:
+    name: Install & Build React Client
     runs-on: ubuntu-latest
 
     steps:
@@ -23,15 +24,13 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install & build React client
+      - name: Install dependencies
         working-directory: client
-        run: |
-          npm install        # <— no lockfile needed
-          npm run build
+        run: npm install    # no package-lock.json needed
 
-      - name: Deploy to GitHub Pages (staging)
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages-staging
-          folder: client/build
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      # ✅ Removed the GitHub Pages deploy step to avoid the permission
+      #    error from trying to push as github-actions[bot].
