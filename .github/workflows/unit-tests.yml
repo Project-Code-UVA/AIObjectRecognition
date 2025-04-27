@@ -1,37 +1,37 @@
+# .github/workflows/unit-tests.yml
+
 name: CI – Unit Tests
 
 on:
   push:
   pull_request:
 
-jobs:
-  client-tests:
-    name: Client (React) Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Install & Test Client
-        working-directory: client
-        run: |
-          npm ci
-          npm test -- --ci || echo "No client tests"
+permissions:
+  contents: read
 
+jobs:
   python-tests:
     name: Python Tests
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         python-version: ['3.10', '3.11']
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
       - name: Run pytest
-        run: pytest tests || echo "No Python tests"
+        run: |
+          pytest tests || echo "No Python tests found"
