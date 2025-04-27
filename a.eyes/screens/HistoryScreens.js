@@ -80,6 +80,10 @@ export default function HistoryScreen({ navigate }) {
         <MaterialIcons name="arrow-back" size={24} color="white" />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigate('Camera')}>
+        <MaterialIcons name="camera-alt" size={24} color="white" />
+        <Text style={styles.backText}>Camera</Text>
+      </TouchableOpacity>
     </View>
   );
 }

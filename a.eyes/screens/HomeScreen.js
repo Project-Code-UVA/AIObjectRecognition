@@ -9,7 +9,11 @@ export default function HomeScreen({ navigate }) {
       <StatusBar style="dark" />
       
       <View style={styles.header}>
-        <MaterialIcons name="visibility" size={80} color="#3498db" />
+        <Image 
+          source={require('../assets/logo.png')} 
+          style={{ width: 150, height: 150}}
+          accessibilityLabel="A.Eyes logo"
+          accessibilityHint="Logo of A.Eyes application"></Image>
         <Text style={styles.title}>A.Eyes</Text>
         <Text style={styles.subtitle}>Vision Assistant for the Visually Impaired</Text>
       </View>
