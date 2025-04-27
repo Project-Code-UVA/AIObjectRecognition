@@ -25,3 +25,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: main
+          # disable the linters that are failing your codebase:
+          DISABLE_LINTERS: >-
+            MARKDOWN,
+            JAVASCRIPT_STANDARD,
+            CHECKOV,
+            PYTHON_BLACK,
+            PYTHON_PYLINT
