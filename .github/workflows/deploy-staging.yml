@@ -1,41 +1,30 @@
-name: Deploy Staging
+name: Deploy Expo Web (Staging)
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: staging     # add env-level secrets if desired
-
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
-      - run: npm ci
-      - run: npx expo export --platform web --output-dir dist-web
+          node-version: '16'
 
-      - name: Build backend container
-        uses: docker/build-push-action@v5
-        with:
-          context: backend
-          push: true
-          tags: ghcr.io/${{ github.repository }}:staging
+      - name: Install dependencies
+        working-directory: a.eyes
+        run: npm ci
 
-      # Example: deploy to AWS Elastic Beanstalk
-      - name: Deploy to EB
-        uses: einaregilsson/beanstalk-deploy@v25
+      - name: Export Web
+        working-directory: a.eyes
+        run: npx expo export --platform web --output-dir dist-web
+
+      - name: Deploy to GitHub Pages (staging)
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          application_name: ai-eyes-staging
-          environment_name: ai-eyes-staging-env
-          version_label: github-${{ github.sha }}
-          bucket_name: ${{ secrets.EB_S3_BUCKET }}
-          bucket_key: app-${{ github.sha }}.zip
-          region: us-east-1
-          deployment_package: backend/Dockerrun.aws.json
-          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          branch: gh-pages-staging
+          folder: a.eyes/dist-web
+          token: ${{ secrets.GITHUB_TOKEN }}
