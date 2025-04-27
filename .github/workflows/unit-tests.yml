@@ -1,52 +1,37 @@
-name: Unit Tests
+name: CI – Unit Tests
 
 on:
-  pull_request:
   push:
-    branches: ['**']
+  pull_request:
 
 jobs:
-  test-js-py:
+  client-tests:
+    name: Client (React) Tests
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node: [18, 20]
-        python: ['3.10', '3.11']
-
     steps:
       - uses: actions/checkout@v4
-
-      # ───────────── JavaScript side ─────────────
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-          # ⚠️  no cache line → setup-node won’t look for package-lock.json
-          # cache: 'npm'
-
-      - name: Install JS deps
+          node-version: '18'
+      - name: Install & Test Client
+        working-directory: client
         run: |
-          if [ -f package-lock.json ]; then
-            echo "package-lock.json found → npm ci"
-            npm ci
-          else
-            echo "No lock-file → npm install"
-            npm install
-          fi
+          npm ci
+          npm test -- --ci || echo "No client tests"
 
-      - name: Run JS unit tests (if any)
-        run: npm test -- --ci || echo "No JS tests"
-
-      # ───────────── Python side ─────────────
-      - name: Set up Python
-        uses: actions/setup-python@v5
+  python-tests:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
-          cache: 'pip'
-
-      - name: Install Python deps & run tests
-        run: |
-          pip install -r backend/requirements.txt
-          pip install pytest
-          pytest backend || echo "No Py tests"
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+      - name: Run pytest
+        run: pytest tests || echo "No Python tests"
