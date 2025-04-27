@@ -2,8 +2,9 @@ name: Super-Linter
 
 on:
   pull_request:
+    branches: ['application-implementation']  # Trigger on PRs to application-implementation branch
   push:
-    branches: ['**']
+    branches: ['application-implementation']  # Trigger on pushes to application-implementation branch
 
 jobs:
   lint:
@@ -15,7 +16,7 @@ jobs:
       - name: Code Lint
         uses: github/super-linter/slim@v6
         env:
-          DEFAULT_BRANCH: main
+          DEFAULT_BRANCH: application-implementation  # Update default branch to application-implementation
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Optional: turn off languages you don’t use
           # DISABLE_LINTERS: 'RUBY,GO'
