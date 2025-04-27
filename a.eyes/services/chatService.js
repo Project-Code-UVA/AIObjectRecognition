@@ -1,18 +1,14 @@
-const CHAT_ENDPOINT = 'https://api-inference.huggingface.co/models/meta-llama/Llama-2-13b-chat-hf';
+const CHAT_ENDPOINT = 'https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta'; // google/gemma-7-it is good alt
 import Constants from 'expo-constants';
+import axios from 'axios';
 
 const API_KEY = Constants.expoConfig.extra.HUGGINGFACE_API_KEY;
 
 export async function chatWithImage(context, message) {
   const systemPrompt = `You are an assistant helping a visually impaired user. The image is described as: "${context.gemmaDescription}". The main object is: "${context.objectLabel}". Answer questions about this image.`;
   const payload = {
-    inputs: {
-      past_user_inputs: [],
-      generated_responses: [],
-      text: message,
-    },
+    inputs: `${systemPrompt}\nUser: ${message}`,
     parameters: {
-      system_prompt: systemPrompt,
       max_new_tokens: 256,
       temperature: 0.7,
     }
@@ -33,14 +29,28 @@ export async function chatWithImage(context, message) {
           timeout: 20000,
         }
       );
+      let aiText = '';
       if (res.data && typeof res.data.generated_text === 'string') {
-        return res.data.generated_text.trim();
+        aiText = res.data.generated_text;
+      } else if (Array.isArray(res.data) && res.data[0]?.generated_text) {
+        aiText = res.data[0].generated_text;
+      } else {
+        throw new Error('No AI reply');
       }
-      if (Array.isArray(res.data) && res.data[0]?.generated_text) {
-        return res.data[0].generated_text.trim();
+      // Extract only the AI's response after the last "User:" or "user:" or "Assistant:" or "assistant:"
+      const match = aiText.match(/(?:Assistant:|assistant:)([\s\S]*)$/);
+      if (match && match[1]) {
+        return match[1].trim();
       }
-      throw new Error('No AI reply');
+      // Fallback: remove everything before the last user message
+      const lastUserIdx = aiText.lastIndexOf(`User: ${message}`);
+      if (lastUserIdx !== -1) {
+        return aiText.slice(lastUserIdx + (`User: ${message}`).length).trim();
+      }
+      // If all else fails, return the whole text trimmed
+      return aiText.trim();
     } catch (err) {
+      console.error('chatWithImage error:', err?.response?.data || err.message || err);
       if (err.response && err.response.status === 429 || err.code === 'ECONNABORTED') {
         attempt++;
         await new Promise(r => setTimeout(r, delay));

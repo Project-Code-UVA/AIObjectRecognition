@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { decode as atob, encode as btoa } from 'base-64';
 import Constants from 'expo-constants';
 
 const ELEVENLABS_API_KEY = Constants.expoConfig.extra.ELEVENLABS_API_KEY;
 const ELEVENLABS_VOICE_ID = '56AoDkrOh6qfVPDXZ7Pt';
+const ELEVENLABS_STT_ENDPOINT = 'https://api.elevenlabs.io/v1/speech-to-text';
 const TtsContext = createContext();
 
-export function TtsProvider({ children }) { // <-- Capitalized
+export function TtsProvider({ children }) {
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const toggleTts = () => setTtsEnabled((prev) => !prev);
 
@@ -19,7 +19,7 @@ export function TtsProvider({ children }) { // <-- Capitalized
   );
 }
 
-export function useTts() { // <-- Lowercase
+export function useTts() {
   return useContext(TtsContext);
 }
 
@@ -71,4 +71,66 @@ function arrayBufferToBase64(buffer) {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
+}
+
+// --- ElevenLabs Speech-to-Text ---
+
+export async function elevenLabsTranscribe({ fileUri, mimeType = 'audio/webm' }) {
+  try {
+    const formData = new FormData();
+    formData.append('audio', {
+      uri: fileUri,
+      name: 'audio.webm',
+      type: mimeType,
+    });
+
+    const response = await fetch(ELEVENLABS_STT_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': ELEVENLABS_API_KEY,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error('ElevenLabs STT error: ' + err);
+    }
+
+    const data = await response.json();
+    return data.text || data.transcript || '';
+  } catch (error) {
+    console.error('ElevenLabs STT error:', error);
+    throw error;
+  }
+}
+
+// --- Audio Recording Helper ---
+
+export async function recordAudioAsync() {
+  try {
+    await Audio.requestPermissionsAsync();
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+    });
+
+    const recording = new Audio.Recording();
+    await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+    await recording.startAsync();
+    return recording;
+  } catch (error) {
+    console.error('Failed to start recording', error);
+    throw error;
+  }
+}
+
+export async function stopAndGetUri(recording) {
+  try {
+    await recording.stopAndUnloadAsync();
+    return recording.getURI();
+  } catch (error) {
+    console.error('Failed to stop recording', error);
+    throw error;
+  }
 }

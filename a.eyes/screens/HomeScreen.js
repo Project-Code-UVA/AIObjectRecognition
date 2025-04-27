@@ -31,7 +31,7 @@ export default function HomeScreen({ navigate }) {
         
         <TouchableOpacity 
           style={[styles.button, styles.secondaryButton]} 
-          onPress={() => navigate('Chat')}
+          onPress={() => navigate('History')}
           accessibilityLabel="View previous chat history"
           accessibilityHint="Shows your previous image descriptions"
         >

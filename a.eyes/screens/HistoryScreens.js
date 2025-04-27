@@ -32,7 +32,12 @@ export default function HistoryScreen({ navigate }) {
   };
 
   const handleChatPress = (item) => {
-    navigate('HistoryChat', { historyItem: item });
+    navigate('Chat', { context: {
+      id: item.timestamp,
+      uri: item.imageUri,
+      objectLabel: item.label,
+      gemmaDescription: item.label,
+    }});
   };
 
   return (

@@ -39,6 +39,9 @@ export default {
         {
           cameraPermission: "A.Eyes needs access to your camera to capture images for analysis and description."
         }
+      ],
+      [
+        "expo-speech-recognition"
       ]
     ],
     extra: {

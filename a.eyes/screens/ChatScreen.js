@@ -3,27 +3,34 @@ import { View, Text, Image, FlatList, TouchableOpacity, TextInput, ActivityIndic
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chatWithImage } from '../services/chatService';
-import { speakWithElevenLabs, useTts } from '../services/ttsService';
-import Voice from '@react-native-voice/voice';
+import { speakWithElevenLabs, useTts, recordAudioAsync, stopAndGetUri, elevenLabsTranscribe } from '../services/ttsService';
 
 const CHAT_HISTORY_KEY = 'a.eyes.image_chats';
 
 export default function ChatScreen({ navigate, route }) {
-  const { context } = route.params;
+  const context = route?.params?.context;
+  if (!context) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>No image context provided for chat.</Text>
+        <TouchableOpacity onPress={() => navigate('History')}>
+          <MaterialIcons name="arrow-back" size={24} color="#3498db" />
+          <Text style={{ color: '#3498db', marginTop: 8 }}>Back to History</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const [chatLog, setChatLog] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [recording, setRecording] = useState(null);
   const [listening, setListening] = useState(false);
   const flatListRef = useRef();
   const { ttsEnabled, toggleTts } = useTts();
 
   useEffect(() => {
     loadChat();
-    Voice.onSpeechResults = onSpeechResults;
-    Voice.onSpeechError = onSpeechError;
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
   }, []);
 
   const loadChat = async () => {
@@ -51,27 +58,30 @@ export default function ChatScreen({ navigate, route }) {
     await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(allChats.slice(0, 50)));
   };
 
-  // Speech-to-text handlers
-  const onSpeechResults = (e) => {
-    if (e.value && e.value[0]) setInput(e.value[0]);
-    setListening(false);
-  };
-  const onSpeechError = (e) => {
-    setListening(false);
-  };
+  // --- ElevenLabs STT mic logic ---
   const startListening = async () => {
     setListening(true);
     try {
-      await Voice.start('en-US');
+      const rec = await recordAudioAsync();
+      setRecording(rec);
     } catch (e) {
       setListening(false);
     }
   };
+
   const stopListening = async () => {
     setListening(false);
+    if (!recording) return;
     try {
-      await Voice.stop();
-    } catch (e) {}
+      const uri = await stopAndGetUri(recording);
+      setRecording(null);
+      // Transcribe with ElevenLabs
+      setInput('Transcribing...');
+      const transcript = await elevenLabsTranscribe({ fileUri: uri, mimeType: 'audio/webm' });
+      setInput(transcript);
+    } catch (e) {
+      setInput('');
+    }
   };
 
   const handleSend = async () => {
