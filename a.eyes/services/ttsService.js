@@ -78,16 +78,18 @@ function arrayBufferToBase64(buffer) {
 export async function elevenLabsTranscribe({ fileUri, mimeType = 'audio/webm' }) {
   try {
     const formData = new FormData();
-    formData.append('audio', {
+    formData.append('file', {
       uri: fileUri,
-      name: 'audio.webm',
+      name: 'audio.webm', // or 'audio.m4a' if that's your format
       type: mimeType,
     });
+    formData.append('model_id', 'scribe_v1');
 
     const response = await fetch(ELEVENLABS_STT_ENDPOINT, {
       method: 'POST',
       headers: {
         'xi-api-key': ELEVENLABS_API_KEY,
+        // Do NOT set 'Content-Type' here
       },
       body: formData,
     });
