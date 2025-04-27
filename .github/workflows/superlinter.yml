@@ -1,17 +1,25 @@
+# .github/workflows/superlinter.yml
+
 name: Super-Linter
 
 on:
   push:
     branches:
       - main
-      - 'feature/**'
   pull_request:
+
+permissions:
+  contents: read    # needed to checkout your code
+  statuses: write   # needed to post status checks back to GitHub
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Run Super-Linter
         uses: github/super-linter/slim@v6
         env:
