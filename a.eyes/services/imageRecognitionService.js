@@ -1,8 +1,8 @@
 import axios from 'axios';
-import Config from 'react-native-config';
+import Constants from 'expo-constants';
 
 const GEMMA_MODEL = 'Salesforce/blip-image-captioning-base';
-const API_KEY = '';
+const API_KEY = Constants.expoConfig.extra.HUGGINGFACE_API_KEY;
 
 export const analyzeImage = async (imageBase64) => {
   console.log('Preparing image for analysis...');

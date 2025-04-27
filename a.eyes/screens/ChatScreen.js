@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, TextInput, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
-import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { chatWithImage } from '../services/chatService';
-import { speakWithElevenLabs } from './CameraScreen';
+import { speakWithElevenLabs, useTts } from '../services/ttsService';
+import Voice from '@react-native-voice/voice';
 
 const CHAT_HISTORY_KEY = 'a.eyes.image_chats';
 
@@ -14,11 +13,17 @@ export default function ChatScreen({ navigate, route }) {
   const [chatLog, setChatLog] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [listening, setListening] = useState(false);
   const flatListRef = useRef();
+  const { ttsEnabled, toggleTts } = useTts();
 
   useEffect(() => {
     loadChat();
+    Voice.onSpeechResults = onSpeechResults;
+    Voice.onSpeechError = onSpeechError;
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
   }, []);
 
   const loadChat = async () => {
@@ -46,6 +51,29 @@ export default function ChatScreen({ navigate, route }) {
     await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(allChats.slice(0, 50)));
   };
 
+  // Speech-to-text handlers
+  const onSpeechResults = (e) => {
+    if (e.value && e.value[0]) setInput(e.value[0]);
+    setListening(false);
+  };
+  const onSpeechError = (e) => {
+    setListening(false);
+  };
+  const startListening = async () => {
+    setListening(true);
+    try {
+      await Voice.start('en-US');
+    } catch (e) {
+      setListening(false);
+    }
+  };
+  const stopListening = async () => {
+    setListening(false);
+    try {
+      await Voice.stop();
+    } catch (e) {}
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
     const userMsg = { sender: 'user', text: input.trim(), timestamp: new Date().toISOString() };
@@ -55,13 +83,17 @@ export default function ChatScreen({ navigate, route }) {
     setLoading(true);
     saveChat(newLog);
 
+    // Show spinner in AI bubble
+    const spinnerMsg = { sender: 'ai', text: '', timestamp: new Date().toISOString(), loading: true };
+    setChatLog([...newLog, spinnerMsg]);
+
     try {
       const aiReply = await chatWithImage(context, userMsg.text);
       const aiMsg = { sender: 'ai', text: aiReply, timestamp: new Date().toISOString() };
       const updatedLog = [...newLog, aiMsg];
       setChatLog(updatedLog);
       saveChat(updatedLog);
-      if (ttsEnabled) await speakWithElevenLabs(aiReply); // <-- Use ElevenLabs TTS here
+      if (ttsEnabled) await speakWithElevenLabs(aiReply);
     } catch (e) {
       const errMsg = { sender: 'ai', text: "Sorry, I couldn't reply due to a network error.", timestamp: new Date().toISOString() };
       const updatedLog = [...newLog, errMsg];
@@ -90,7 +122,11 @@ export default function ChatScreen({ navigate, route }) {
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item }) => (
           <View style={[styles.msg, item.sender === 'user' ? styles.userMsg : styles.aiMsg]}>
-            <Text style={styles.msgText}>{item.text}</Text>
+            {item.loading ? (
+              <ActivityIndicator color="#3498db" />
+            ) : (
+              <Text style={styles.msgText}>{item.text}</Text>
+            )}
             <Text style={styles.msgTime}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
           </View>
         )}
@@ -98,6 +134,9 @@ export default function ChatScreen({ navigate, route }) {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
       <View style={styles.inputRow}>
+        <TouchableOpacity onPress={listening ? stopListening : startListening} style={styles.micBtn}>
+          <MaterialIcons name={listening ? "mic-off" : "mic"} size={24} color={listening ? "#e74c3c" : "#3498db"} />
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={input}
@@ -109,7 +148,7 @@ export default function ChatScreen({ navigate, route }) {
         <TouchableOpacity onPress={handleSend} disabled={loading || !input.trim()} style={styles.sendBtn}>
           {loading ? <ActivityIndicator color="#fff" /> : <MaterialIcons name="send" size={24} color="#fff" />}
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setTtsEnabled(t => !t)} style={{ marginLeft: 8 }}>
+        <TouchableOpacity onPress={toggleTts} style={{ marginLeft: 8 }}>
           <MaterialIcons name={ttsEnabled ? "volume-up" : "volume-off"} size={24} color="#3498db" />
         </TouchableOpacity>
       </View>
@@ -130,4 +169,5 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#eee' },
   input: { flex: 1, backgroundColor: '#f2f2f2', borderRadius: 20, paddingHorizontal: 16, fontSize: 16, marginRight: 8 },
   sendBtn: { backgroundColor: '#3498db', borderRadius: 20, padding: 10 },
+  micBtn: { marginRight: 8 },
 });

@@ -1,7 +1,7 @@
-import axios from 'axios';
-
-const API_KEY = ''; // env file dont work idk why
 const CHAT_ENDPOINT = 'https://api-inference.huggingface.co/models/meta-llama/Llama-2-13b-chat-hf';
+import Constants from 'expo-constants';
+
+const API_KEY = Constants.expoConfig.extra.HUGGINGFACE_API_KEY;
 
 export async function chatWithImage(context, message) {
   const systemPrompt = `You are an assistant helping a visually impaired user. The image is described as: "${context.gemmaDescription}". The main object is: "${context.objectLabel}". Answer questions about this image.`;

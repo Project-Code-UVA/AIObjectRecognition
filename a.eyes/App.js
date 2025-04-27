@@ -5,6 +5,7 @@ import CameraScreen from './screens/CameraScreen';
 import ChatScreen from './screens/HistoryScreens';
 import HistoryScreen from './screens/HistoryScreens';
 import HistoryChatScreen from './screens/HistoryChatScreen';
+import { TtsProvider } from './services/ttsService';
 
 export default function App() {
   const [screen, setScreen] = useState('Home');
@@ -31,14 +32,16 @@ export default function App() {
   }, [screen, chatParams]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      {screen === 'Home' && <HomeScreen navigate={navigate} />}
-      {screen === 'Camera' && <CameraScreen navigate={navigate} />}
-      {screen === 'Chat' && <ChatScreen navigate={navigate} chatParams={chatParams} />}
-      {screen === 'History' && <HistoryScreen navigate={navigate} />}
-      {screen === 'HistoryChat' && <HistoryChatScreen navigate={navigate} route={{ params: chatParams }} />}
-    </SafeAreaView>
+    <TtsProvider>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        {screen === 'Home' && <HomeScreen navigate={navigate} />}
+        {screen === 'Camera' && <CameraScreen navigate={navigate} />}
+        {screen === 'Chat' && <ChatScreen navigate={navigate} chatParams={chatParams} />}
+        {screen === 'History' && <HistoryScreen navigate={navigate} />}
+        {screen === 'HistoryChat' && <HistoryChatScreen navigate={navigate} route={{ params: chatParams }} />}
+      </SafeAreaView>
+    </TtsProvider>
   );
 }
 
