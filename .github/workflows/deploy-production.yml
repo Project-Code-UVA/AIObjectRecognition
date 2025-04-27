@@ -1,22 +1,21 @@
-name: Deploy Production
+name: Deploy to Elastic Beanstalk
 
 on:
   push:
-    tags: ['v*.*.*']   # Trigger on semantic version tags
+    tags: ['v*.*.*']   # Trigger deployment on semantic version tags (e.g., v1.0.0)
 
 jobs:
-  promote:
+  deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
       - name: Install dependencies
         run: npm ci
@@ -29,13 +28,14 @@ jobs:
           tags: ghcr.io/${{ github.repository }}:prod
 
       # Alternative: Use ECS deploy if beanstalk deploy is missing
-      - name: Deploy to Elastic Beanstalk (alternative)
+      - name: Deploy to AWS Elastic Beanstalk (or ECS)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: backend/taskdef.json          # Define your task definition here
-          service: ai-eyes-prod
           cluster: ai-eyes
+          service: ai-eyes-prod
+          task-definition: backend/taskdef.json  # Ensure your task definition is correct
           wait-for-service-stability: true
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
