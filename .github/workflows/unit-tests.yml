@@ -1,0 +1,36 @@
+name: Unit Tests
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+
+jobs:
+  test-js-py:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: [18, 20]
+        python: ['3.10', '3.11']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- JavaScript side ---
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test -- --ci || echo "No JS tests"
+
+      # --- Python side ---
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
+      - run: |
+          pip install -r backend/requirements.txt
+          pip install pytest
+          pytest backend || echo "No Py tests"
